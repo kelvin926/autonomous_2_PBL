@@ -1,4 +1,5 @@
 from pop import Pilot, AI
+import time
 
 cam = Pilot.Camera(width=224, height=224)
 car = Pilot.AutoCar()
@@ -6,22 +7,34 @@ car = Pilot.AutoCar()
 object_follow = AI.Object_Follow(cam)
 object_follow.load_model()
 
+find_num = 0
+
 while True:
     ret = object_follow.detect(index='person')
-    if ret is not None:
-        steer = ret['x'] * 4
-        car.steering = 1 if steer > 1 else -1 if steer < -1 else steer
-        size_value = ret['size_rate']
-        if (size_value <= 0.1):
+    if ret is not None: # 사람이 감지되었을 때
+        find_num = 0
+        ret_steer = ret['x'] * 4
+        global real_steer
+        real_steer = 1 if ret_steer > 1 else -1 if ret_steer < -1 else ret_steer # 위 Ret값에서 4를 곱한 값이 1 이상이면 1, 아니면 -1 / -1 이하이면 -1, 아니면 1 -> 결국 1 / -1 두 값 중 하나로만 간다는 것.
+        car.steering = real_steer
+        size_value = ret['size_rate'] # 감지 사이즈 %단위로 나옴.
+        if (size_value <= 0.1): # 아주 멀리서 감지되었을 때 (10% 이하)
             car.forward(80)
-        elif (0.125 < size_value <= 0.175):
+        elif (0.1 < size_value <= 0.2):
             car.forward(50)
-        elif (0.175 < size_value <= 0.25):
+        elif (0.2 < size_value <= 0.3):
             car.forward(30)
-        else:
+        else: # 너무 가까울 때(30% 이상)
             car.backward(80)
-    else:
-        car.stop()
+    else: # 사람이 감지되지 않았을 때
+        if find_num <= 3:
+            car.forward(45)
+            car.steering = real_steer
+            find_num += 1 
+            time.sleep(1) # 1초
+        else: # 3초 이상 찾아봤는데 없을 때
+            car.stop()
+            print("3초 이상 사람이 감지되지 않았습니다.")
 
 """
 [과제]
