@@ -26,6 +26,7 @@ while True:
             car.forward(30)
         else: # 너무 가까울 때(30% 이상)
             car.backward(80)
+            time.sleep(0.3) # 0.3초동안 강하게 후진
     else: # 사람이 감지되지 않았을 때
         if find_num <= 3:
             car.forward(45)
