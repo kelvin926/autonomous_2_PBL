@@ -10,6 +10,9 @@ object_follow.load_model()
 find_num = 0
 real_steer = 0
 
+find_num = 0
+real_steer = 0
+
 while True:
     ret = object_follow.detect(index='person')
     if ret is not None: # 사람이 감지되었을 때
@@ -19,21 +22,22 @@ while True:
         car.steering = real_steer
         size_value = ret['size_rate'] # 감지 사이즈 %단위로 나옴.
         if (size_value <= 0.1): # 아주 멀리서 감지되었을 때 (10% 이하)
-            car.forward(80)
-        elif (0.1 < size_value <= 0.2):
-            car.forward(50)
-        elif (0.2 < size_value <= 0.3):
-            car.forward(30)
+            car.forward(60)
+        # elif (0.1 < size_value <= 0.15):
+        #     car.forward(50)
+        elif (0.1 < size_value <= 0.15):
+            car.forward(40)
         else: # 너무 가까울 때(30% 이상)
-            car.backward(80)
+            car.steering = (- real_steer)
+            car.backward(60)
             time.sleep(0.3) # 0.3초동안 강하게 후진
     else: # 사람이 감지되지 않았을 때
         if find_num < 3:
-            car.forward(45)
+            car.forward(40)
             car.steering = real_steer
-            find_num += 1 
-            time.sleep(1) # 1초
-        else: # 3초 이상 찾아봤는데 없을 때
+            find_num += 1
+            time.sleep(0.5)
+        else: # 1초 이상 찾아봤는데 없을 때
             car.steering = 0
             car.stop()
             print("3초 이상 사람이 감지되지 않았습니다.")
