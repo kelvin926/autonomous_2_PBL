@@ -1,5 +1,45 @@
-from pop import Pilot, AI
+from pop import Pilot, AI, LiDAR
 import time
+from threading import Thread
+
+global Rear_Exist
+Rear_Exist = 0
+
+# lidar
+def Lidar():
+    lidar = LiDAR.Rplidar()
+    lidar.connect()
+    lidar.startMotor()
+    
+    def _inner(): # lidar scan data
+        return lidar.getVectors()
+    return _inner # data return
+
+def lidar_analysis(Raw_Data):
+    for v in (Raw_Data):
+        if v[0] > 155 and v[0] <= 205: # 후방
+            return v[1]
+
+def on_lidar(): # lidar data organize
+        Raw_Data = Lidar() # V에 lidar Raw data 입력.
+        Rear_Raw = lidar_analysis(Raw_Data)
+        if Rear_Raw <= 500:
+            Rear_Exist = 1
+        else:
+            Rear_Exist = 0
+        time.sleep(0.1)
+
+
+
+
+# lidar
+t = Thread(target=on_lidar, args=(True,))
+t.daemon = True
+t.start()
+    
+
+# lidar end
+
 
 cam = Pilot.Camera(width=224, height=224)
 car = Pilot.AutoCar()
@@ -27,10 +67,13 @@ while True:
         #     car.forward(50)
         elif (0.1 < size_value <= 0.15):
             car.forward(40)
-        else: # 너무 가까울 때(30% 이상)
+        else: # 너무 가까울 때(15% 이상)
             car.steering = (- real_steer)
-            car.backward(60)
-            time.sleep(0.3) # 0.3초동안 강하게 후진
+            if Rear_Raw <= 500: # 후방 라이다 값이 500mm보다 작을 때
+                car.stop()
+            else:
+                car.backward(60)
+                time.sleep(0.3) # 0.3초동안 강하게 후진
     else: # 사람이 감지되지 않았을 때
         if find_num < 3:
             car.forward(40)
@@ -40,7 +83,7 @@ while True:
         else: # 1초 이상 찾아봤는데 없을 때
             car.steering = 0
             car.stop()
-            print("3초 이상 사람이 감지되지 않았습니다.")
+            # print("3초 이상 사람이 감지되지 않았습니다.")
 
 """
 [과제]
