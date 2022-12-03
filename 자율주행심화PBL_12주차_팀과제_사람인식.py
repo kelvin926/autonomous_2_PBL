@@ -34,6 +34,7 @@ while True:
             find_num += 1 
             time.sleep(1) # 1초
         else: # 3초 이상 찾아봤는데 없을 때
+            car.steering = 0
             car.stop()
             print("3초 이상 사람이 감지되지 않았습니다.")
 
