@@ -59,7 +59,7 @@ def on_lidar(car, lidar):
                 Rear_Raw = v[1]
         time.sleep(0.1)
 
-def gogo(car, object_follow):
+def gogo(car, object_follow, real_steer, find_num):
     gogo.is_stop = False
     
     while not gogo.is_stop:
@@ -76,7 +76,7 @@ def gogo(car, object_follow):
                 car.forward(40)
             else: # 너무 가까울 때(15% 이상)
                 car.steering = (- real_steer)
-                if Rear_Raw <= 1000: # 후방 라이다 값이 500mm보다 작을 때
+                if Rear_Raw <= 1000: # 후방 라이다 값이 1000mm(1m)보다 작을 때
                     car.stop()
                     print("후방 감지")
                     time.sleep(5)
@@ -93,17 +93,20 @@ def gogo(car, object_follow):
                 car.steering = 0
                 car.stop()
                 # print("3초 이상 사람이 감지되지 않았습니다.")
-
+                
+    car.steering = 0
+    car.stop()
 
 def main():
     find_num = 0
     real_steer = 0
     
+    cam = Pilot.Camera(width=224, height=224)
+    car = Pilot.AutoCar()
+    
     object_follow = AI.Object_Follow(cam)
     object_follow.load_model()
     
-    cam = Pilot.Camera(width=224, height=224)
-    car = Pilot.AutoCar()
     lidar = Lidar()
 
     Thread(target=on_lidar, args=(car, lidar)).start()
