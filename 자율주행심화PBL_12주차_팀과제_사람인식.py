@@ -1,46 +1,3 @@
-from pop import Pilot, AI
-import time
-
-cam = Pilot.Camera(width=224, height=224)
-car = Pilot.AutoCar()
-
-object_follow = AI.Object_Follow(cam)
-object_follow.load_model()
-
-find_num = 0
-real_steer = 0
-
-find_num = 0
-real_steer = 0
-
-while True:
-    ret = object_follow.detect(index='person')
-    if ret is not None: # 사람이 감지되었을 때
-        find_num = 0
-        ret_steer = ret['x'] * 4
-        real_steer = 1 if ret_steer > 1 else -1 if ret_steer < -1 else ret_steer # 위 Ret값에서 4를 곱한 값이 1 이상이면 1, 아니면 -1 / -1 이하이면 -1, 아니면 1 -> 결국 1 / -1 두 값 중 하나로만 간다는 것.
-        car.steering = real_steer
-        size_value = ret['size_rate'] # 감지 사이즈 %단위로 나옴.
-        if (size_value <= 0.1): # 아주 멀리서 감지되었을 때 (10% 이하)
-            car.forward(60)
-        # elif (0.1 < size_value <= 0.15):
-        #     car.forward(50)
-        elif (0.1 < size_value <= 0.15): # 멀리서 감지되었을 때 (10% 초과 15% 이하)
-            car.forward(40)
-        else: # 너무 가까울 때(30% 이상)
-            car.steering = (- real_steer)
-            car.backward(60)
-            time.sleep(0.3) # 0.3초동안 강하게 후진
-    else: # 사람이 감지되지 않았을 때
-        if find_num < 3:
-            car.forward(40)
-            car.steering = real_steer
-            find_num += 1
-            time.sleep(0.5)
-        else: # 1.5초 이상 찾아봤는데 없을 때
-            car.steering = 0
-            car.stop()
-            print("3초 이상 사람이 감지되지 않았습니다.")
 
 """
 [TodoList]
@@ -51,6 +8,15 @@ while True:
 
 - Lidar 사용 (사람이 앞에 감지되지 않았더라도, 앞에 사물이 가깝게 있으면 뒤로 살짝 물러서기, 뒤에 사물이 있으면 멈추고 비프음 내기)
 - 비프음 사용
+
+
+1. Lidar를 이용해서 충돌하지 않고 잘 따라오도록 만드는 것.
+2. 뒤로 물러설수도 있어야 함 (라이다를 통해, 뒤가 막혀있으면 옆으로 갈 수도 있을 것)
+3. 다 막혔을 땐 움직이지 않고, 가만히 있는다 (사람이 움직이면 다시 오기)
+4. 부드럽게 움직이기
+5. 소리 출력 (강아지라고 생각하거나, 2살짜리 아기라고 생각하거나 … -> 모델링)
+6. 목적성 (애완견(주인 보면 애교부리는)인가, 나를 케어하는 반려견인가, 방범로봇(가만히 있다가 사람이 등장하면 경고하며 사진찍기)
+7. 사람은 한 명만 있다고 가정함.
 
 
 [과제]
@@ -65,3 +31,90 @@ Hint : 20%의 거리가 좀 멀음 (1m) 가까워지면 점점 %가 높아짐 (�
 
 3. 후진 할 때 뒤에 장애물 탐지해서, 장애물이 있으면 멈추기 (Lidar, Sonar) -> Lidar 사용해서 뒤에 계속 감지(후진할 때만), 뒤에 사물 있으면 삐 소리 내면서 정지하기
 """
+
+from pop import Pilot, AI, LiDAR
+import time
+from threading import Thread
+
+# lidar
+def Lidar():
+    lidar = LiDAR.Rplidar()
+    lidar.connect()
+    lidar.startMotor()
+    def close():
+        lidar.stopMotor()
+    Lidar.close = close
+    def _inner():
+        return lidar.getVectors()
+    return _inner
+
+
+def on_lidar(car, lidar):
+    on_lidar.is_stop = False
+    while not on_lidar.is_stop:
+        V = lidar()
+        for v in V:
+            if v[0] >= 360 - 135 and v[0] <= 360 - 225: # 후방 90도
+                global Rear_Raw
+                Rear_Raw = v[1]
+        time.sleep(0.1)
+
+def gogo(car, object_follow):
+    gogo.is_stop = False
+    
+    ret = object_follow.detect(index='person')
+    if ret is not None: # 사람이 감지되었을 때
+        find_num = 0
+        ret_steer = ret['x'] * 4
+        real_steer = 1 if ret_steer > 1 else -1 if ret_steer < -1 else ret_steer # 위 Ret값에서 4를 곱한 값이 1 이상이면 1, 아니면 -1 / -1 이하이면 -1, 아니면 1 -> 결국 1 / -1 두 값 중 하나로만 간다는 것.
+        car.steering = real_steer
+        size_value = ret['size_rate'] # 감지 사이즈 %단위로 나옴.
+        if (size_value <= 0.1): # 아주 멀리서 감지되었을 때 (10% 이하)
+            car.forward(60)
+        elif (0.1 < size_value <= 0.15):
+            car.forward(40)
+        else: # 너무 가까울 때(15% 이상)
+            car.steering = (- real_steer)
+            if Rear_Raw <= 500: # 후방 라이다 값이 500mm보다 작을 때
+                car.stop()
+                print("후방 감지")
+                time.sleep(5)
+            else:
+                car.backward(60)
+                time.sleep(0.3) # 0.3초동안 강하게 후진
+    else: # 사람이 감지되지 않았을 때
+        if find_num < 3:
+            car.forward(40)
+            car.steering = real_steer
+            find_num += 1
+            time.sleep(0.5)
+        else: # 1초 이상 찾아봤는데 없을 때
+            car.steering = 0
+            car.stop()
+            # print("3초 이상 사람이 감지되지 않았습니다.")
+
+
+def main():
+    find_num = 0
+    real_steer = 0
+    
+    object_follow = AI.Object_Follow(cam)
+    object_follow.load_model()
+    
+    cam = Pilot.Camera(width=224, height=224)
+    car = Pilot.AutoCar()
+    lidar = Lidar()
+
+    Thread(target=on_lidar, args=(car, lidar)).start()
+    Thread(target=gogo, args=(car, object_follow, real_steer, find_num)).start()
+    
+    input()
+
+    on_lidar.is_stop = True
+    gogo.is_stop = True
+    Lidar.close()
+    car.stop()
+
+
+if __name__ == "__main__":
+    main()
