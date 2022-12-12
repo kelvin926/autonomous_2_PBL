@@ -56,12 +56,8 @@ Speed_Fast = 80
 Size_Far = 0.1 # 10%
 Size_Half = 0.15 # 15%
 
-Distance_Close = 500 # 30cm
-Distance_Very_Close = 300 # 10cm
-
-
-# find_num = 0 # 사람을 찾은 횟수 -> 모델에 따라 변경해야 함.
-
+Distance_Close = 500 # 50cm
+Distance_Very_Close = 300 # 30cm
 
 while True: # 무한 반복
     ret = object_follow.detect(index='person') # 사람 감지
@@ -104,14 +100,5 @@ while True: # 무한 반복
                 # time.sleep(0.3) # 0.3초동안 후진 (매끄럽게 수정 필요)
 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
-        # if find_num < 3:
-        #     car.forward(Speed_Slow)
-        #     car.steering = Real_Steer
-        #     find_num += 1
-        #     time.sleep(0.5)
-        # else: # 1.5초 이상 찾아봤는데 없을 때
-        #     car.steering = 0
-        #     car.stop()
-        #     print("3초 이상 사람이 감지되지 않았습니다.")
         car.stop() # 일단 정지 -> 모델에 따라 행동을 변경해야 함.
         out_sound("사람 찾는 소리")
