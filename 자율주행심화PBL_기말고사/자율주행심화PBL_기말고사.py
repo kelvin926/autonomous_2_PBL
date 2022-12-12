@@ -36,7 +36,7 @@ car = Pilot.AutoCar() # 자동차 객체 생성
 object_follow = AI.Object_Follow(cam) # Object_Follow 객체 생성 (카메라 가져옴)
 object_follow.load_model() # Object_Follow 모델 로드
 
-def out_voice(wav_file):
+def out_sound(wav_file):
     p = Process(target=playsound, args=(wav_file,))
     p.start()
     if (car._out_voice != None):
@@ -72,9 +72,11 @@ while True: # 무한 반복
         
         if (Size_value <= Size_Far): # 아주 멀리서 감지되었을 때
             car.forward(Speed_Middle) # 속도를 보통으로 함
+            out_sound("반가워서 짖는 소리")
         
         elif (Size_Far < Size_value <= Size_Half): # 멀리서 감지되었을 때
             car.forward(Speed_Slow) # 속도를 느리게 함.
+            out_sound("산책할 때 헥헥대는 소리")
         
         else: # 너무 가까울 때(15% 이상)
             car.steering = (- Real_Steer) # 후진하는 동안에는 반대 방향으로 조향
@@ -86,14 +88,15 @@ while True: # 무한 반복
             
             if (Rear_Raw <= Distance_Close): # 약간의 공간은 있음 -> 실제로는 생각보다 가까이 멈추기 때문에(가속도 때문), 조금 더 높여야 할 필요가 있음. (수정 필요)
                 car.backward(Speed_Slow) # 느리게 후진
-                print("공간이 거의 없어요!") # 모델에 따라 행동을 변경해야 함 (수정 필요)
+                out_sound("무서워서 낑낑거리는 소리 + 물러서는 소리")
             
             elif (Rear_Raw <= Distance_Very_Close): # 완전 공간 없음
                 car.stop() # 후방에 장애물이 감지되었기 때문에, 정지
-                print("공간 없어요!") # 모델에 따라 행동을 변경해야 함 (수정 필요)
+                out_sound("완전 무서워하는 소리 + 짖으면서..?")
             
             else: # 후방에 장애물이 감지되지 않았을 때
                 car.backward(Speed_Middle) # 계속 후진
+                out_sound("낑낑대는 소리 + 빠르게 물러서는 소리")
                 time.sleep(0.3) # 0.3초동안 후진 (매끄럽게 수정 필요)
 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
