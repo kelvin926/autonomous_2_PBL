@@ -56,10 +56,10 @@ Speed_Fast = 80
 Size_Far = 0.1 # 10%
 Size_Half = 0.15 # 15%
 
-Distance_Close = 300 # 30cm
-Distance_Very_Close = 100 # 10cm
+Distance_Close = 500 # 30cm
+Distance_Very_Close = 300 # 10cm
 
-Rear_Raw = 0 # Lidar 후방 거리값
+
 # find_num = 0 # 사람을 찾은 횟수 -> 모델에 따라 변경해야 함.
 
 
@@ -81,14 +81,16 @@ while True: # 무한 반복
             out_sound("산책할 때 헥헥대는 소리")
         
         else: # 너무 가까울 때(15% 이상)
+            global Rear_Raw
+            Rear_Raw = 0 # Lidar 후방 거리값
             car.steering = (- Real_Steer) # 후진하는 동안에는 반대 방향으로 조향
             Raw = lidar.getVectors() # Lidar 값을 Raw로 받아옴
             for v in Raw:
-                if (v[0] >= 360 - 170 and v[0] <= 360 - 190): # 후방 20도
+                if (v[0] >= 360 - 185 and v[0] <= 360 - 175): # 후방 10도
                     Rear_Raw = v[1] # 후방 거리값
-                    # print(Rear_Raw) # 후방 거리값 출력
+                    print(Rear_Raw) # 후방 거리값 출력
             
-            if ((Distance_Very_Close <= Rear_Raw) and (Rear_Raw <= Distance_Close)): # 약간의 공간은 있음 -> 실제로는 생각보다 가까이 멈추기 때문에(가속도 때문), 조금 더 높여야 할 필요가 있음. (수정 필요)
+            if ((Distance_Very_Close < Rear_Raw) and (Rear_Raw <= Distance_Close)): # 약간의 공간은 있음 -> 실제로는 생각보다 가까이 멈추기 때문에(가속도 때문), 조금 더 높여야 할 필요가 있음. (수정 필요)
                 car.backward(Speed_Slow) # 느리게 후진
                 out_sound("무서워서 낑낑거리는 소리 + 물러서는 소리")
             
@@ -99,7 +101,7 @@ while True: # 무한 반복
             else: # 후방에 장애물이 감지되지 않았을 때
                 car.backward(Speed_Middle) # 계속 후진
                 out_sound("낑낑대는 소리 + 빠르게 물러서는 소리")
-                time.sleep(0.3) # 0.3초동안 후진 (매끄럽게 수정 필요)
+                # time.sleep(0.3) # 0.3초동안 후진 (매끄럽게 수정 필요)
 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
         # if find_num < 3:
