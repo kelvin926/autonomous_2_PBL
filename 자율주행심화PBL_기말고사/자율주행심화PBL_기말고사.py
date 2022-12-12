@@ -23,7 +23,7 @@
 
 from pop import Pilot, AI, LiDAR
 import time
-from playsound import playsound
+# from playsound import playsound
 from multiprocessing import Process
 
 lidar = LiDAR.Rplidar() # Lidar 객체 생성
@@ -32,18 +32,19 @@ lidar.startMotor() # Lidar 모터 작동
 
 cam = Pilot.Camera(width=224, height=224) # 자동차 카메라 객체 생성
 car = Pilot.AutoCar() # 자동차 객체 생성
-car._out_sound = None # 자동차 객체에 out_sound 변수 추가
+# car._out_sound = None # 자동차 객체에 out_sound 변수 추가
 
 object_follow = AI.Object_Follow(cam) # Object_Follow 객체 생성 (카메라 가져옴)
 object_follow.load_model() # Object_Follow 모델 로드
 
 def out_sound(wav_file):
-    p = Process(target=playsound, args=(wav_file,))
-    p.start()
-    if (car._out_sound != None):
-            car._out_sound.terminate()
-            car._out_sound = None
-    return p
+    # p = Process(target=playsound, args=(wav_file,))
+    # p.start()
+    # if (car._out_sound != None):
+    #         car._out_sound.terminate()
+    #         car._out_sound = None
+    # return p
+    print(wav_file)
 
 # ---------- 각종 변수들 ---------- #
 Real_Steer = 0 # 실제 자동차에 반영될 조향값
@@ -55,8 +56,8 @@ Speed_Fast = 80
 Size_Far = 0.1 # 10%
 Size_Half = 0.15 # 15%
 
-Distance_Close = 500 # 50cm
-Distance_Very_Close = 300 # 30cm
+Distance_Close = 800 # 50cm
+Distance_Very_Close = 500 # 30cm
 
 Rear_Raw = 0 # Lidar 후방 거리값
 # find_num = 0 # 사람을 찾은 횟수 -> 모델에 따라 변경해야 함.
@@ -83,7 +84,7 @@ while True: # 무한 반복
             car.steering = (- Real_Steer) # 후진하는 동안에는 반대 방향으로 조향
             Raw = lidar.getVectors() # Lidar 값을 Raw로 받아옴
             for v in Raw:
-                if (v[0] >= 360 - 170 and v[0] <= 360 - 190): # 후방 20도
+                if (v[0] >= 360 - 175 and v[0] <= 360 - 185): # 후방 10도
                     Rear_Raw = v[1] # 후방 거리값
                     # print(Rear_Raw) # 후방 거리값 출력
             
