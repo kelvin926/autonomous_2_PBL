@@ -32,6 +32,7 @@ lidar.startMotor() # Lidar 모터 작동
 
 cam = Pilot.Camera(width=224, height=224) # 자동차 카메라 객체 생성
 car = Pilot.AutoCar() # 자동차 객체 생성
+car._out_sound = None # 자동차 객체에 out_sound 변수 추가
 
 object_follow = AI.Object_Follow(cam) # Object_Follow 객체 생성 (카메라 가져옴)
 object_follow.load_model() # Object_Follow 모델 로드
@@ -39,9 +40,9 @@ object_follow.load_model() # Object_Follow 모델 로드
 def out_sound(wav_file):
     p = Process(target=playsound, args=(wav_file,))
     p.start()
-    if (car._out_voice != None):
-            car._out_voice.terminate()
-            car._out_voice = None
+    if (car._out_sound != None):
+            car._out_sound.terminate()
+            car._out_sound = None
     return p
 
 # ---------- 각종 변수들 ---------- #
