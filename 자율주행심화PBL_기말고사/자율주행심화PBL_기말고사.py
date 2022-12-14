@@ -58,16 +58,19 @@ Size_Half = 0.15 # 15%
 Distance_Close = 500 # 50cm
 Distance_Very_Close = 300 # 30cm
 
-class Sound():
-    out_sound = "very_far.wav"
+global now_sound
+now_sound = "very_far.wav"
 
-sound = Sound()
+def change_sound(set_sound):
+    global now_sound
+    now_sound = set_sound
 
 
 def say(nope):
     while True:
-        playsound(sound.out_sound)
-        time.sleep(0.5)
+        playsound(now_sound)
+        print(now_sound)
+        time.sleep(0.7)
 
 s = Process(target = say, args=(None,)).start()
 
@@ -81,11 +84,11 @@ while True: # 무한 반복
         
         if (Size_value <= Size_Far): # 아주 멀리서 감지되었을 때
             car.forward(Speed_Middle) # 속도를 보통으로 함
-            sound.out_sound = "very_far.wav"
+            change_sound("very_far.wav")
         
         elif (Size_Far < Size_value <= Size_Half): # 멀리서 감지되었을 때
             car.forward(Speed_Slow) # 속도를 느리게 함.
-            sound.out_sound = "far.wav"
+            change_sound("far.wav")
         
         else: # 너무 가까울 때(15% 이상)
             global Rear_Raw
@@ -99,24 +102,16 @@ while True: # 무한 반복
             
             if ((Distance_Very_Close < Rear_Raw) and (Rear_Raw <= Distance_Close)): # 약간의 공간은 있음
                 car.backward(Speed_Slow) # 느리게 후진
-                sound.out_sound = "close.wav"
+                change_sound("close.wav")
             
             elif (Rear_Raw <= Distance_Very_Close): # 완전 공간 없음
                 car.stop() # 후방에 장애물이 감지되었기 때문에, 정지
-                sound.out_sound = "ggam_nol.wav"
+                change_sound("ggam_nol.wav")
             
             else: # 후방에 장애물이 감지되지 않았을 때
                 car.backward(Speed_Middle) # 계속 후진
-                sound.out_sound = "close.wav"
+                change_sound("close.wav")
                 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
         car.stop() # 일단 정지 -> 모델에 따라 행동을 변경해야 함.
-        sound.out_sound = "missing.wav"
-
-
-# def out_sound(wav_file):
-#     p = Process(target=playsound, args=(wav_file,))
-#     p.start()
-#     time.sleep(0.5)
-#     p.terminate()
-#     return p
+        change_sound("missing.wav")
