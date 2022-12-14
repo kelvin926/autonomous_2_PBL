@@ -32,7 +32,7 @@ missing.wav : 사람이 사라졌을 때
 from pop import Pilot, AI, LiDAR
 import time
 from playsound import playsound
-from multiprocessing import Process
+from threading import Thread
 
 lidar = LiDAR.Rplidar() # Lidar 객체 생성
 lidar.connect() # Lidar 연결
@@ -53,7 +53,7 @@ Speed_Middle = 60
 Speed_Fast = 80
 
 Size_Far = 0.1 # 10%
-Size_Half = 0.15 # 15%
+Size_Half = 0.17 # 17%
 
 Distance_Close = 500 # 50cm
 Distance_Very_Close = 300 # 30cm
@@ -61,18 +61,14 @@ Distance_Very_Close = 300 # 30cm
 global now_sound
 now_sound = "very_far.wav"
 
-def change_sound(set_sound):
-    global now_sound
-    now_sound = set_sound
-
 
 def say(nope):
     while True:
+        global now_sound
         playsound(now_sound)
-        print(now_sound)
-        time.sleep(0.7)
+        time.sleep(0.1)
 
-s = Process(target = say, args=(None,)).start()
+s = Thread(target = say, args=(None,)).start()
 
 while True: # 무한 반복
     ret = object_follow.detect(index='person') # 사람 감지
@@ -84,13 +80,13 @@ while True: # 무한 반복
         
         if (Size_value <= Size_Far): # 아주 멀리서 감지되었을 때
             car.forward(Speed_Middle) # 속도를 보통으로 함
-            change_sound("very_far.wav")
+            now_sound = "very_far.wav"
         
         elif (Size_Far < Size_value <= Size_Half): # 멀리서 감지되었을 때
             car.forward(Speed_Slow) # 속도를 느리게 함.
-            change_sound("far.wav")
+            now_sound = "far.wav"
         
-        else: # 너무 가까울 때(15% 이상)
+        else: # 너무 가까울 때(15% 초과)
             global Rear_Raw
             Rear_Raw = 0 # Lidar 후방 거리값
             car.steering = (- Real_Steer) # 후진하는 동안에는 반대 방향으로 조향
@@ -102,16 +98,16 @@ while True: # 무한 반복
             
             if ((Distance_Very_Close < Rear_Raw) and (Rear_Raw <= Distance_Close)): # 약간의 공간은 있음
                 car.backward(Speed_Slow) # 느리게 후진
-                change_sound("close.wav")
+                now_sound = "close.wav"
             
             elif (Rear_Raw <= Distance_Very_Close): # 완전 공간 없음
                 car.stop() # 후방에 장애물이 감지되었기 때문에, 정지
-                change_sound("ggam_nol.wav")
+                now_sound = "ggam_nol.wav"
             
             else: # 후방에 장애물이 감지되지 않았을 때
                 car.backward(Speed_Middle) # 계속 후진
-                change_sound("close.wav")
+                now_sound = "close.wav"
                 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
         car.stop() # 일단 정지 -> 모델에 따라 행동을 변경해야 함.
-        change_sound("missing.wav")
+        now_sound = "missing.wav"
