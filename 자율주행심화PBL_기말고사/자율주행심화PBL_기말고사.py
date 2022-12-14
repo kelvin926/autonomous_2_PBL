@@ -48,12 +48,13 @@ object_follow.load_model() # Object_Follow 모델 로드
 # ---------- 각종 변수들 ---------- #
 Real_Steer = 0 # 실제 자동차에 반영될 조향값
 
-Speed_Slow = 40
+Speed_Slow = 50
 Speed_Middle = 60
 Speed_Fast = 80
 
 Size_Far = 0.1 # 10%
-Size_Half = 0.17 # 17%
+Size_Half = 0.15 # 15%
+Size_Big = 0.30 # 20%
 
 Distance_Close = 500 # 50cm
 Distance_Very_Close = 300 # 30cm
@@ -82,11 +83,11 @@ while True: # 무한 반복
             car.forward(Speed_Middle) # 속도를 보통으로 함
             now_sound = "very_far.wav"
         
-        elif (Size_Far < Size_value <= Size_Half): # 멀리서 감지되었을 때
+        elif ((Size_Far < Size_value) and (Size_value <= Size_Half)): # 멀리서 감지되었을 때
             car.forward(Speed_Slow) # 속도를 느리게 함.
             now_sound = "far.wav"
         
-        else: # 너무 가까울 때(15% 초과)
+        elif ((Size_Half < Size_value) and (Size_value <= Size_Big)): # 가까움
             global Rear_Raw
             Rear_Raw = 0 # Lidar 후방 거리값
             car.steering = (- Real_Steer) # 후진하는 동안에는 반대 방향으로 조향
@@ -105,8 +106,13 @@ while True: # 무한 반복
                 now_sound = "ggam_nol.wav"
             
             else: # 후방에 장애물이 감지되지 않았을 때
-                car.backward(Speed_Middle) # 계속 후진
+                car.backward(Speed_Slow) # 계속 후진
                 now_sound = "close.wav"
+                
+        else: # 너무 가까울 때
+            car.stop()
+            now_sound = "very_far.wav"
+            time.sleep(1)
                 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
         car.stop() # 일단 정지 -> 모델에 따라 행동을 변경해야 함.
