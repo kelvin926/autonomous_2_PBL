@@ -58,7 +58,9 @@ Size_Half = 0.15 # 15%
 Distance_Close = 500 # 50cm
 Distance_Very_Close = 300 # 30cm
 
-def go():
+out_sound = "very_far"
+
+def go(nope):
     while True: # 무한 반복
         global out_sound
         ret = object_follow.detect(index='person') # 사람 감지
@@ -103,8 +105,9 @@ def go():
             out_sound = "missing.wav"
 
 def say(out_sound):
-    playsound(out_sound)
-    time.sleep(1)
+    while True:
+        playsound(str(out_sound)+".wav")
+        time.sleep(1)
     
 
 g = Process(target = go, args=(None,)).start()
