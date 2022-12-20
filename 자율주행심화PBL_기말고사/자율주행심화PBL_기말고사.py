@@ -27,6 +27,8 @@ far.wav : 멀리 있을 때
 very_far.wav : 엄청 멀리있을 때
 ggam_nol.wav : 깜짝 놀랐을 때
 missing.wav : 사람이 사라졌을 때
+touching.wav : 사람이 쓰다듬어줄 때
+hurry.wav : 빨리 쓰다듬어달라고 할 때
 '''
 
 from pop import Pilot, AI, LiDAR
@@ -40,6 +42,8 @@ lidar.startMotor() # Lidar 모터 작동
 
 cam = Pilot.Camera(width=224, height=224) # 자동차 카메라 객체 생성
 car = Pilot.AutoCar() # 자동차 객체 생성
+
+car.setSensorStatus(cds=1) # 조도센서 활성화
 
 object_follow = AI.Object_Follow(cam) # Object_Follow 객체 생성 (카메라 가져옴)
 object_follow.load_model() # Object_Follow 모델 로드
@@ -72,6 +76,7 @@ def say(nope):
 s = Thread(target = say, args=(None,)).start()
 
 while True: # 무한 반복
+    car.setLamp(0, 0)
     ret = object_follow.detect(index='person') # 사람 감지
     if ret is not None: # 사람이 감지되었을 때
         ret_steer = ret['x'] * 4 # 사람 감지 좌표값(박스의 정 중앙)을 4로 곱함.
@@ -82,10 +87,12 @@ while True: # 무한 반복
         if (Size_value <= Size_Far): # 아주 멀리서 감지되었을 때
             car.forward(Speed_Middle) # 속도를 보통으로 함
             now_sound = "very_far.wav"
+            car.setLamp(0, 1)
         
         elif ((Size_Far < Size_value) and (Size_value <= Size_Half)): # 멀리서 감지되었을 때
             car.forward(Speed_Slow) # 속도를 느리게 함.
             now_sound = "far.wav"
+            car.setLamp(0, 1)
         
         elif ((Size_Half < Size_value) and (Size_value <= Size_Big)): # 가까움
             global Rear_Raw
@@ -109,11 +116,36 @@ while True: # 무한 반복
                 car.backward(Speed_Slow) # 계속 후진
                 now_sound = "close.wav"
                 
-        else: # 너무 가까울 때
+        else: # 너무 가까울 때 (쓰다듬는)
             car.stop()
-            now_sound = "very_far.wav"
+            cds = car.getLight()
+            # print("조도: " + str(cds))
+            if (cds <= 2000):# 사람이 쓰다듬었을 때
+                now_sound = "touching.wav"
+                car.setLamp(1,1)
+                car.steering = -1
+                time.sleep(0.3)
+                car.steering = 1
+                time.sleep(0.3)
+                car.steering = -1
+                time.sleep(0.3)
+                car.steering = 1
+                time.sleep(0.3)
+            else: # 사람이 쓰다듬지 않았을 때
+                now_sound = "hurry.wav"
+                car.setLamp(1, 0) # 전방 라이트 온
             time.sleep(1)
                 
     else: # 사람이 감지되지 않았을 때 -> 모델에 따라 행동을 변경해야 함.
-        car.stop() # 일단 정지 -> 모델에 따라 행동을 변경해야 함.
-        now_sound = "missing.wav"
+        Raw = lidar.getVectors()
+        car.setLamp(1,0)
+        for v in Raw:
+                if (v[0] >= 360 - 185 and v[0] <= 360 - 175): # 후방 10도
+                    Rear_Raw = v[1] # 후방 거리값
+                    print(Rear_Raw) # 후방 거리값 출력
+        if (Rear_Raw <= Distance_Very_Close): # 완전 공간 없음
+            car.stop() # 후방에 장애물이 감지되었기 때문에, 정지
+            now_sound = "ggam_nol.wav"
+        else:
+            car.stop() # 일단 정지 -> 모델에 따라 행동을 변경해야 함.
+            now_sound = "missing.wav"
